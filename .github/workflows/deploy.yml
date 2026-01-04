@@ -1,87 +1,34 @@
-# .github/workflows/deploy.yml
-#deploy
-name: Deploy Quarto Website to GitHub Pages
+# .github/workflows/preview.yml
+name: Preview Quarto Website
 
 on:
-  # Trigger on pushes to main branch
-  push:
+  pull_request:
     branches: ["main"]
-  
-  # Allow manual triggering from Actions tab
-  workflow_dispatch:
-
-# Set permissions for GitHub Pages deployment
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-
-# Concurrency settings to avoid multiple simultaneous deployments
-concurrency:
-  group: "pages"
-  cancel-inprogress: false
 
 jobs:
-  build-deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    
+  build-preview:
     runs-on: ubuntu-latest
     
     steps:
-      # Step 1: Checkout repository
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0  # Fetch all history for git info
 
-      # Step 2: Install Quarto
       - name: Setup Quarto
         uses: quarto-dev/quarto-actions/setup@v2
 
-      # Step 3: Install Python (if your Quarto site uses Python code)
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.11'
-      
-      # Step 4: Install Python dependencies (if needed)
-      - name: Install Python dependencies
-        run: |
-          python -m pip install --upgrade pip
-          # Add any Python packages your Quarto site needs
-          # pip install pandas numpy matplotlib seaborn
-        # Remove this step if you don't use Python code in your site
 
-      # Step 5: Render Quarto website
       - name: Render Quarto site
         uses: quarto-dev/quarto-actions/render@v2
         with:
           to: html
-        env:
-          # Set environment variables if needed
-          QUARTO_PYTHON: python
 
-      # Step 6: Verify the built site
-      - name: Verify output
-        run: |
-          echo "Checking built site structure..."
-          ls -la _site/
-          echo "Checking for index.html..."
-          ls -la _site/*.html | head -5
-
-      # Step 7: Setup GitHub Pages
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
-
-      # Step 8: Upload artifact
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
+      - name: Upload preview artifact
+        uses: actions/upload-artifact@v4
         with:
-          path: ./_site  # Quarto's default output directory
-
-      # Step 9: Deploy to GitHub Pages
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+          name: quarto-preview
+          path: _site/
+          retention-days: 7
